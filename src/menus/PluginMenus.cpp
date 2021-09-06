@@ -389,6 +389,16 @@ struct Handler : CommandHandlerObject {
 
 void OnResetConfig(const CommandContext &context)
 {
+   int ans = AudacityMessageBox(
+      XO("This will reset everything to default such as the settings, effects and the preferences you have set.")+
+      XO("\n\nAre you sure you want to proceed?"),
+      XO("Warning!"),
+      wxYES_NO | wxCENTRE | wxICON_EXCLAMATION);
+            
+      if (ans != wxYES) {
+         return;
+      }
+
    auto &project = context.project;
    auto &menuManager = MenuManager::Get(project);
    menuManager.mLastAnalyzerRegistration = MenuCreator::repeattypenone;
