@@ -3,6 +3,7 @@
 #include "../AudioIO.h"
 #include "../BatchProcessDialog.h"
 #include "../Benchmark.h"
+#include "../ResetConfig.h"
 #include "../CommonCommandFlags.h"
 #include "../Journal.h"
 #include "../Menus.h"
@@ -389,62 +390,56 @@ struct Handler : CommandHandlerObject {
 
 void OnResetConfig(const CommandContext &context)
 {
-   int ans = AudacityMessageBox(
-      XO("This will reset everything to default such as the settings, effects and the preferences you have set.")+
-      XO("\n\nAre you sure you want to proceed?"),
-      XO("Warning!"),
-      wxYES_NO | wxCENTRE | wxICON_EXCLAMATION);
-            
-      if (ans != wxYES) {
-         return;
-      }
-
    auto &project = context.project;
-   auto &menuManager = MenuManager::Get(project);
-   menuManager.mLastAnalyzerRegistration = MenuCreator::repeattypenone;
-   menuManager.mLastToolRegistration = MenuCreator::repeattypenone;
-   menuManager.mLastGenerator = "";
-   menuManager.mLastEffect = "";
-   menuManager.mLastAnalyzer = "";
-   menuManager.mLastTool = "";
+   CommandManager::Get(project).RegisterLastTool(context);  //Register Run ResetConfig as Last Tool
+   auto &window = GetProjectFrame( project );
+   ::RunResetConfig(&window, project, context);
 
-   ResetPreferences();
+   // auto &menuManager = MenuManager::Get(project);
+   // menuManager.mLastAnalyzerRegistration = MenuCreator::repeattypenone;
+   // menuManager.mLastToolRegistration = MenuCreator::repeattypenone;
+   // menuManager.mLastGenerator = "";
+   // menuManager.mLastEffect = "";
+   // menuManager.mLastAnalyzer = "";
+   // menuManager.mLastTool = "";
 
-   // Directory will be reset on next restart.
-   FileNames::UpdateDefaultPath(FileNames::Operation::Temp, TempDirectory::DefaultTempDir());
+   // ResetPreferences();
 
-   // There are many more things we could reset here.
-   // Beeds discussion as to which make sense to.
-   // Maybe in future versions?
-   // - Reset Effects
-   // - Reset Recording and Playback volumes
-   // - Reset Selection formats (and for spectral too)
-   // - Reset Play-at-speed speed to x1
-   // - Stop playback/recording and unapply pause.
-   // - Set Zoom sensibly.
-   gPrefs->Write("/GUI/SyncLockTracks", 0);
-   gPrefs->Write("/AudioIO/SoundActivatedRecord", 0);
-   gPrefs->Write("/SelectionToolbarMode", 0);
-   gPrefs->Flush();
-   DoReloadPreferences(project);
-   ToolManager::OnResetToolBars(context);
+   // // Directory will be reset on next restart.
+   // FileNames::UpdateDefaultPath(FileNames::Operation::Temp, TempDirectory::DefaultTempDir());
 
-   // These are necessary to preserve the newly correctly laid out toolbars.
-   // In particular the Device Toolbar ends up short on next restart, 
-   // if they are left out.
-   gPrefs->Write(wxT("/PrefsVersion"), wxString(wxT(AUDACITY_PREFS_VERSION_STRING)));
+   // // There are many more things we could reset here.
+   // // Beeds discussion as to which make sense to.
+   // // Maybe in future versions?
+   // // - Reset Effects
+   // // - Reset Recording and Playback volumes
+   // // - Reset Selection formats (and for spectral too)
+   // // - Reset Play-at-speed speed to x1
+   // // - Stop playback/recording and unapply pause.
+   // // - Set Zoom sensibly.
+   // gPrefs->Write("/GUI/SyncLockTracks", 0);
+   // gPrefs->Write("/AudioIO/SoundActivatedRecord", 0);
+   // gPrefs->Write("/SelectionToolbarMode", 0);
+   // gPrefs->Flush();
+   // DoReloadPreferences(project);
+   // ToolManager::OnResetToolBars(context);
 
-   // write out the version numbers to the prefs file for future checking
-   gPrefs->Write(wxT("/Version/Major"), AUDACITY_VERSION);
-   gPrefs->Write(wxT("/Version/Minor"), AUDACITY_RELEASE);
-   gPrefs->Write(wxT("/Version/Micro"), AUDACITY_REVISION);
+   // // These are necessary to preserve the newly correctly laid out toolbars.
+   // // In particular the Device Toolbar ends up short on next restart, 
+   // // if they are left out.
+   // gPrefs->Write(wxT("/PrefsVersion"), wxString(wxT(AUDACITY_PREFS_VERSION_STRING)));
 
-   gPrefs->Flush();
+   // // write out the version numbers to the prefs file for future checking
+   // gPrefs->Write(wxT("/Version/Major"), AUDACITY_VERSION);
+   // gPrefs->Write(wxT("/Version/Minor"), AUDACITY_RELEASE);
+   // gPrefs->Write(wxT("/Version/Micro"), AUDACITY_REVISION);
 
-   ProjectSelectionManager::Get( project )
-      .AS_SetSnapTo(gPrefs->ReadLong("/SnapTo", SNAP_OFF));
-   ProjectSelectionManager::Get( project )
-      .AS_SetRate(gPrefs->ReadDouble("/DefaultProjectSampleRate", 44100.0));
+   // gPrefs->Flush();
+
+   // ProjectSelectionManager::Get( project )
+   //    .AS_SetSnapTo(gPrefs->ReadLong("/SnapTo", SNAP_OFF));
+   // ProjectSelectionManager::Get( project )
+   //    .AS_SetRate(gPrefs->ReadDouble("/DefaultProjectSampleRate", 44100.0));
 }
 
 void OnManageGenerators(const CommandContext &context)
