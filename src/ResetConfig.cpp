@@ -36,19 +36,12 @@ public:
 
 private:
    // WDR: handler declarations
-   void OnSave( wxCommandEvent &event );
+   void OnProceed( wxCommandEvent &event );
    void OnClose( wxCommandEvent &event );
 
    AudacityProject &mProject;
    const CommandContext &mcontext;
-
    wxCheckBox *mathil;
-
-   bool mBlockDetttail;
-   bool      mEditDetail;
-
-   wxTextCtrl  *mText;
-
 private:
    DECLARE_EVENT_TABLE()
 };
@@ -67,12 +60,12 @@ void RunResetConfig( wxWindow *parent, AudacityProject &project, const CommandCo
 //
 
 enum {
-   ProceedID,
+   ProceedID = 1000,
    IdDelayCheckBox,
 };
 
 BEGIN_EVENT_TABLE(ResetConfigDialog, wxDialogWrapper)
-   EVT_BUTTON( ProceedID,  ResetConfigDialog::OnSave )
+   EVT_BUTTON( ProceedID,  ResetConfigDialog::OnProceed )
    EVT_BUTTON( wxID_CANCEL, ResetConfigDialog::OnClose )
 END_EVENT_TABLE()
 
@@ -88,10 +81,6 @@ ResetConfigDialog::ResetConfigDialog(
    , mcontext(context)
 {
    SetName();
-
-   mEditDetail = false;
-
-
    MakeResetConfigDialog();
 }
 
@@ -116,22 +105,15 @@ void ResetConfigDialog::MakeResetConfigDialog()
                   XXO("Directories Preferences"),
                   false);
          //
-         S.Validator<wxGenericValidator>(&mEditDetail)
-            .AddCheckBox(XXO("Effects"),
-                              false);
-         S.Validator<wxGenericValidator>(&mEditDetail)
-            .AddCheckBox(XXO("Settings"),
-                              false);
-         S.Validator<wxGenericValidator>(&mEditDetail)
-            .AddCheckBox(XXO("All Configurations"),
-                              true);
-      S.StartVerticalLay(true);
-      {
-         S.Validator<wxGenericValidator>(&mBlockDetttail)
-            .AddCheckBox(XXO("Don't ask this question again"),
-                              true);
-      }
-      S.EndVerticalLay();
+         // S.Validator<wxGenericValidator>(&mEditDetail)
+         //    .AddCheckBox(XXO("Effects"),
+         //                      false);
+         // S.Validator<wxGenericValidator>(&mEditDetail)
+         //    .AddCheckBox(XXO("Settings"),
+         //                      false);
+         // S.Validator<wxGenericValidator>(&mEditDetail)
+         //    .AddCheckBox(XXO("All Configurations"),
+         //                      true);
          //
          S.SetBorder(25);
          S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, false);
@@ -166,7 +148,7 @@ void ResetConfigDialog::MakeResetConfigDialog()
    S.EndStatic();
 }
 
-void ResetConfigDialog::OnSave( wxCommandEvent & WXUNUSED(event))
+void ResetConfigDialog::OnProceed( wxCommandEvent & WXUNUSED(event))
 {
    if (mathil && 
          mathil->GetValue())
