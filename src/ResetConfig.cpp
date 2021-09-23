@@ -20,6 +20,7 @@ of sample block storage.
 #include "toolbars/ToolManager.h"
 #include "commands/CommandContext.h"
 #include "prefs/PrefsDialog.h"
+#include "toolbars/TranscriptionToolBar.h"
 #include <wx/valgen.h>
 #include <wx/valtext.h>
 #include "ShuttleGui.h"
@@ -104,17 +105,7 @@ void ResetConfigDialog::MakeResetConfigDialog()
       mathil = S.Id(IdDelayCheckBox).AddCheckBox(
                   XXO("Directories Preferences"),
                   false);
-         //
-         // S.Validator<wxGenericValidator>(&mEditDetail)
-         //    .AddCheckBox(XXO("Effects"),
-         //                      false);
-         // S.Validator<wxGenericValidator>(&mEditDetail)
-         //    .AddCheckBox(XXO("Settings"),
-         //                      false);
-         // S.Validator<wxGenericValidator>(&mEditDetail)
-         //    .AddCheckBox(XXO("All Configurations"),
-         //                      true);
-         //
+
          S.SetBorder(25);
          S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, false);
          {
@@ -166,21 +157,15 @@ void ResetConfigDialog::OnProceed( wxCommandEvent & WXUNUSED(event))
       // Directory will be reset on next restart.
       FileNames::UpdateDefaultPath(FileNames::Operation::Temp, TempDirectory::DefaultTempDir());
 
-      // There are many more things we could reset here.
-      // Beeds discussion as to which make sense to.
-      // Maybe in future versions?
-      // - Reset Effects
-      // - Reset Recording and Playback volumes
-      // - Reset Selection formats (and for spectral too)
-      // - Reset Play-at-speed speed to x1
-      // - Stop playback/recording and unapply pause.
-      // - Set Zoom sensibly.
+
       gPrefs->Write("/GUI/SyncLockTracks", 0);
       gPrefs->Write("/AudioIO/SoundActivatedRecord", 0);
       gPrefs->Write("/SelectionToolbarMode", 0);
       gPrefs->Flush();
       DoReloadPreferences(mProject);
       ToolManager::OnResetToolBars(mcontext);
+
+
 
       // These are necessary to preserve the newly correctly laid out toolbars.
       // In particular the Device Toolbar ends up short on next restart, 
@@ -201,3 +186,21 @@ void ResetConfigDialog::OnProceed( wxCommandEvent & WXUNUSED(event))
    }
    EndModal(0);
 }
+
+
+      // There are many more things we could reset here.
+      // Beeds discussion as to which make sense to.
+      // Maybe in future versions?
+      // - Reset Effects
+      // - Reset Recording and Playback volumes
+      // - Reset Selection formats (and for spectral too)
+      // - Reset Play-at-speed speed to x1
+      // - Stop playback/recording and unapply pause.
+      // - Set Zoom sensibly.
+
+
+            //for clearing the pluginregistry
+      //wxRemoveFile()
+      //TranscriptionToolBar kollam;
+      //resetting the playback speed
+      //kollam.SetPlaySpeed( 1.00 );
