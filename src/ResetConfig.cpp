@@ -6,14 +6,15 @@
 
   Jithin John
 
-*******************************************************************//**
+*******************************************************************/
+/**
 
 \class ResetConfigDialog
 \brief ResetConfigDialog is used for measuring performance and accuracy
 of sample block storage.
 
-*//*******************************************************************/
-
+*/
+/*******************************************************************/
 
 #include "ProjectSettings.h"
 #include "ProjectSelectionManager.h"
@@ -27,29 +28,45 @@ of sample block storage.
 #include "Menus.h"
 #include "TempDirectory.h"
 
+#include "widgets/KeyView.h"
+
 class ResetConfigDialog final : public wxDialogWrapper
 {
 public:
    // constructors and destructors
-   ResetConfigDialog( wxWindow *parent, AudacityProject &project, const CommandContext &context);
+   ResetConfigDialog(wxWindow *parent, AudacityProject &project, const CommandContext &context);
 
    void MakeResetConfigDialog();
 
 private:
    // WDR: handler declarations
-   void OnProceed( wxCommandEvent &event );
-   void OnClose( wxCommandEvent &event );
-
+   void OnProceed(wxCommandEvent &event);
+   void OnClose(wxCommandEvent &event);
+   std::vector<NormalizedKeyString> mDefaultKeys; // The full set.
+   std::vector<NormalizedKeyString> mNewKeys;     // Used for work in progress.
+   CommandIDs mNames;
+   KeyView *mView;
+   std::vector<NormalizedKeyString> mStandardDefaultKeys; // The reduced set.
+   std::vector<NormalizedKeyString> mKeys;
    AudacityProject &mProject;
+   AudacityProject *jProject{};
    const CommandContext &mcontext;
+   CommandManager *mManager;
+   void FilterKeys(std::vector<NormalizedKeyString> &arr);
+   void RefreshBindings(bool bSort);
+      wxRadioButton *mViewByTree;
+   wxRadioButton *mViewByName;
+   wxRadioButton *mViewByKey;
+   bool Commit();
    wxCheckBox *mathil;
+
 private:
    DECLARE_EVENT_TABLE()
 };
 
-void RunResetConfig( wxWindow *parent, AudacityProject &project, const CommandContext &context)
+void RunResetConfig(wxWindow *parent, AudacityProject &project, const CommandContext &context)
 {
-   ResetConfigDialog dlog{ parent, project, context };
+   ResetConfigDialog dlog{parent, project, context};
 
    dlog.CentreOnParent();
 
@@ -60,26 +77,28 @@ void RunResetConfig( wxWindow *parent, AudacityProject &project, const CommandCo
 // ResetConfigDialog
 //
 
-enum {
+enum
+{
    ProceedID = 1000,
+   ViewByTreeID,
+   ViewByNameID,
+   ViewByKeyID,
    IdDelayCheckBox,
 };
 
 BEGIN_EVENT_TABLE(ResetConfigDialog, wxDialogWrapper)
-   EVT_BUTTON( ProceedID,  ResetConfigDialog::OnProceed )
-   EVT_BUTTON( wxID_CANCEL, ResetConfigDialog::OnClose )
+EVT_BUTTON(ProceedID, ResetConfigDialog::OnProceed)
+EVT_BUTTON(wxID_CANCEL, ResetConfigDialog::OnClose)
 END_EVENT_TABLE()
 
 ResetConfigDialog::ResetConfigDialog(
-   wxWindow *parent, AudacityProject &project, const CommandContext &context)
-   :
-      /* i18n-hint: ResetConfig means a software speed test */
-      wxDialogWrapper( parent, 0, XO("Reset Configuration"),
-                wxDefaultPosition, wxDefaultSize,
-                wxDEFAULT_DIALOG_STYLE |
-                wxRESIZE_BORDER)
-   , mProject(project)
-   , mcontext(context)
+    wxWindow *parent, AudacityProject &project, const CommandContext &context)
+    : /* i18n-hint: ResetConfig means a software speed test */
+      wxDialogWrapper(parent, 0, XO("Reset Configuration"),
+                      wxDefaultPosition, wxDefaultSize,
+                      wxDEFAULT_DIALOG_STYLE |
+                          wxRESIZE_BORDER),
+      mProject(project), mcontext(context)
 {
    SetName();
    MakeResetConfigDialog();
@@ -87,7 +106,7 @@ ResetConfigDialog::ResetConfigDialog(
 
 // WDR: handler implementations for ResetConfigDialog
 
-void ResetConfigDialog::OnClose(wxCommandEvent & WXUNUSED(event))
+void ResetConfigDialog::OnClose(wxCommandEvent &WXUNUSED(event))
 {
    EndModal(0);
 }
@@ -95,17 +114,15 @@ void ResetConfigDialog::OnClose(wxCommandEvent & WXUNUSED(event))
 void ResetConfigDialog::MakeResetConfigDialog()
 {
    ShuttleGui S(this, eIsCreating);
-   S.StartStatic(XO("This can reset everything to default such \nas the settings, effects and the preferences\n you have set.\n\n")+XO("Select the configurations you want to reset"));
+   S.StartStatic(XO("This can reset everything to default such \nas the settings, effects and the preferences\n you have set.\n\n") + XO("Select the configurations you want to reset"));
    {
       S.StartVerticalLay(true);
       {
          S.SetBorder(8);
 
          //
-      mathil = S.Id(IdDelayCheckBox).AddCheckBox(
-                  XXO("Directories Preferences"),
-                  false);
-
+         mathil = S.Id(IdDelayCheckBox).AddCheckBox(XXO("Directories Preferences"), false);
+         
          S.SetBorder(25);
          S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, false);
          {
@@ -139,12 +156,12 @@ void ResetConfigDialog::MakeResetConfigDialog()
    S.EndStatic();
 }
 
-void ResetConfigDialog::OnProceed( wxCommandEvent & WXUNUSED(event))
+void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
 {
-   if (mathil && 
-         mathil->GetValue())
+   if (mathil &&
+       mathil->GetValue())
    {
-      auto &menuManager = MenuManager::Get(mProject);
+      /*auto &menuManager = MenuManager::Get(mProject);
       menuManager.mLastAnalyzerRegistration = MenuCreator::repeattypenone;
       menuManager.mLastToolRegistration = MenuCreator::repeattypenone;
       menuManager.mLastGenerator = "";
@@ -157,7 +174,6 @@ void ResetConfigDialog::OnProceed( wxCommandEvent & WXUNUSED(event))
       // Directory will be reset on next restart.
       FileNames::UpdateDefaultPath(FileNames::Operation::Temp, TempDirectory::DefaultTempDir());
 
-
       gPrefs->Write("/GUI/SyncLockTracks", 0);
       gPrefs->Write("/AudioIO/SoundActivatedRecord", 0);
       gPrefs->Write("/SelectionToolbarMode", 0);
@@ -165,12 +181,29 @@ void ResetConfigDialog::OnProceed( wxCommandEvent & WXUNUSED(event))
       DoReloadPreferences(mProject);
       ToolManager::OnResetToolBars(mcontext);
 
+      */
+      //////////////////////////////////////////////////////////////////////////
+      mManager = &CommandManager::Get(mProject);
 
+      RefreshBindings(false);
+      gPrefs->DeleteEntry(wxT("/GUI/Shortcuts/FullDefaults"));
+      gPrefs->Flush();
 
+      mNewKeys = mDefaultKeys;
+
+      if (2 == 1)
+         FilterKeys(mNewKeys);
+      for (size_t i = 0; i < mNewKeys.size(); i++)
+      {
+         mManager->SetKeyFromIndex(i, mNewKeys[i]);
+      }
+      RefreshBindings(true);
+      bool verna = Commit();
+      ////////////////////////////////////////////////////////////////////////////////
       // These are necessary to preserve the newly correctly laid out toolbars.
-      // In particular the Device Toolbar ends up short on next restart, 
+      // In particular the Device Toolbar ends up short on next restart,
       // if they are left out.
-      gPrefs->Write(wxT("/PrefsVersion"), wxString(wxT(AUDACITY_PREFS_VERSION_STRING)));
+      /*gPrefs->Write(wxT("/PrefsVersion"), wxString(wxT(AUDACITY_PREFS_VERSION_STRING)));
 
       // write out the version numbers to the prefs file for future checking
       gPrefs->Write(wxT("/Version/Major"), AUDACITY_VERSION);
@@ -179,28 +212,108 @@ void ResetConfigDialog::OnProceed( wxCommandEvent & WXUNUSED(event))
 
       gPrefs->Flush();
 
-      ProjectSelectionManager::Get( mProject )
-         .AS_SetSnapTo(gPrefs->ReadLong("/SnapTo", SNAP_OFF));
-      ProjectSelectionManager::Get( mProject )
-         .AS_SetRate(gPrefs->ReadDouble("/DefaultProjectSampleRate", 44100.0));
+      ProjectSelectionManager::Get(mProject)
+          .AS_SetSnapTo(gPrefs->ReadLong("/SnapTo", SNAP_OFF));
+      ProjectSelectionManager::Get(mProject)
+          .AS_SetRate(gPrefs->ReadDouble("/DefaultProjectSampleRate", 44100.0));*/
    }
    EndModal(0);
 }
+void ResetConfigDialog::FilterKeys(std::vector<NormalizedKeyString> &arr)
+{
+   const auto &MaxListOnly = CommandManager::ExcludedList();
 
+   // Remove items that are in MaxList.
+   for (size_t i = 0; i < arr.size(); i++)
+   {
+      if (std::binary_search(MaxListOnly.begin(), MaxListOnly.end(), arr[i]))
+         arr[i] = {};
+   }
+}
 
-      // There are many more things we could reset here.
-      // Beeds discussion as to which make sense to.
-      // Maybe in future versions?
-      // - Reset Effects
-      // - Reset Recording and Playback volumes
-      // - Reset Selection formats (and for spectral too)
-      // - Reset Play-at-speed speed to x1
-      // - Stop playback/recording and unapply pause.
-      // - Set Zoom sensibly.
+bool ResetConfigDialog::Commit()
+{
+   // On the Mac, preferences may be changed without any active
+   // projects.  This means that the CommandManager isn't available
+   // either.  So we can't attempt to save preferences, otherwise
+   // NULL ptr dereferences will happen in ShuttleGui because the
+   // radio buttons are never created.  (See Populate() above.)
+   // if (!mProject)
+   // {
+   //    return true;
+   // }
 
+   // ShuttleGui S(this, eIsSavingToPrefs);
+   // PopulateOrExchange(S);
 
-            //for clearing the pluginregistry
-      //wxRemoveFile()
-      //TranscriptionToolBar kollam;
-      //resetting the playback speed
-      //kollam.SetPlaySpeed( 1.00 );
+   bool bFull = gPrefs->ReadBool(wxT("/GUI/Shortcuts/FullDefaults"), false);
+   for (size_t i = 0; i < mNames.size(); i++)
+   {
+      const auto &dkey = bFull ? mDefaultKeys[i] : mStandardDefaultKeys[i];
+      // using GET to interpret CommandID as a config path component
+      auto name = wxT("/NewKeys/") + mNames[i].GET();
+      const auto &key = mNewKeys[i];
+
+      if (gPrefs->HasEntry(name))
+      {
+         if (key != NormalizedKeyString{gPrefs->ReadObject(name, key)})
+         {
+            gPrefs->Write(name, key);
+         }
+         if (key == dkey)
+         {
+            gPrefs->DeleteEntry(name);
+         }
+      }
+      else
+      {
+         if (key != dkey)
+         {
+            gPrefs->Write(name, key);
+         }
+      }
+   }
+
+   return gPrefs->Flush();
+}
+
+void ResetConfigDialog::RefreshBindings(bool bSort)
+{
+   TranslatableStrings Labels;
+   TranslatableStrings Categories;
+   TranslatableStrings Prefixes;
+
+   mNames.clear();
+   mKeys.clear();
+   mDefaultKeys.clear();
+   mStandardDefaultKeys.clear();
+   mManager->GetAllCommandData(
+       mNames,
+       mKeys,
+       mDefaultKeys,
+       Labels,
+       Categories,
+       Prefixes,
+       true); // True to include effects (list items), false otherwise.
+
+   mStandardDefaultKeys = mDefaultKeys;
+   FilterKeys(mStandardDefaultKeys);
+
+   mNewKeys = mKeys;
+}
+
+// There are many more things we could reset here.
+// Beeds discussion as to which make sense to.
+// Maybe in future versions?
+// - Reset Effects
+// - Reset Recording and Playback volumes
+// - Reset Selection formats (and for spectral too)
+// - Reset Play-at-speed speed to x1
+// - Stop playback/recording and unapply pause.
+// - Set Zoom sensibly.
+
+//for clearing the pluginregistry
+//wxRemoveFile()
+//TranscriptionToolBar kollam;
+//resetting the playback speed
+//kollam.SetPlaySpeed( 1.00 );
