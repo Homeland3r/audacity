@@ -122,7 +122,6 @@ void ResetConfigDialog::MakeResetConfigDialog()
 
          //
          mathil = S.Id(IdDelayCheckBox).AddCheckBox(XXO("Directories Preferences"), false);
-         
          S.SetBorder(25);
          S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, false);
          {
