@@ -1081,8 +1081,9 @@ void OnSyncLock(const CommandContext &context)
    auto &trackPanel = TrackPanel::Get( project );
 
    bool bSyncLockTracks;
-   gPrefs->Read(wxT("/GUI/SyncLockTracks"), &bSyncLockTracks, false);
-   gPrefs->Write(wxT("/GUI/SyncLockTracks"), !bSyncLockTracks);
+   bSyncLockTracks = SyncLockTracks.Read();
+   bSyncLockTracks = SyncLockTracks.Read();
+   SyncLockTracks.Write(!bSyncLockTracks);
    gPrefs->Flush();
 
    // Toolbar, project sync-lock handled within

@@ -143,7 +143,7 @@ PrefsPanel::Registration sAttachment{ "TracksBehaviors",
 bool GetEditClipsCanMove()
 {
    bool mIsSyncLocked;
-   gPrefs->Read(wxT("/GUI/SyncLockTracks"), &mIsSyncLocked, false);
+   mIsSyncLocked = SyncLockTracks.Read();
    if( mIsSyncLocked )
       return true;
    bool editClipsCanMove;

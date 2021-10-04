@@ -608,7 +608,7 @@ void MenuManager::ModifyToolbarMenus(AudacityProject &project)
    // the Edit toolbar and the sync-lock menu item.
    bool active;
 
-   gPrefs->Read(wxT("/GUI/SyncLockTracks"), &active, false);
+   active = SyncLockTracks.Read();
    settings.SetSyncLock(active);
 
    CommandManager::Get( project ).UpdateCheckmarks( project );
