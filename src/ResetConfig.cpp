@@ -113,7 +113,7 @@ void ResetConfigDialog::OnClose(wxCommandEvent &WXUNUSED(event))
 void ResetConfigDialog::MakeResetConfigDialog()
 {
    ShuttleGui S(this, eIsCreating);
-   S.StartStatic(XO("\nWARNING : This can reset everything to default such as the \nsettings, effects and the preferences you have set.\n\n") + XO("Select the configurations you want to reset\n\n"));
+   S.StartStatic(XO("\n\e[1mWARNING\e[0m : This can reset everything to default\nsuch as the settings, effects and the preferences\nyou have set.\n\n") + XO("Select the configurations you want to reset\n\n"));
    {
       S.StartVerticalLay(true);
       {
@@ -125,7 +125,7 @@ void ResetConfigDialog::MakeResetConfigDialog()
          mKeyboardCheckbox = S.Id(IdKeyboardCheckBox).AddCheckBox(XXO("Keyboard Preferences"), false);
          mMouseCheckbox = S.Id(IdMouseCheckBox).AddCheckBox(XXO("Recording/Playback Preferences"), false);
          mAllConfigurationsCheckbox = S.Id(IdAllConfigurationCheckbox).AddCheckBox(XXO("All Configurations"), false);
-         S.SetBorder(45);
+         S.SetBorder(40);
          S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, false);
          {
             S.StartHorizontalLay(wxALIGN_LEFT, false);
@@ -161,8 +161,7 @@ void ResetConfigDialog::MakeResetConfigDialog()
 
 void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
 {
-   if (mDirectoriesCheckbox &&
-       mDirectoriesCheckbox->GetValue())
+   if (mDirectoriesCheckbox)
    {
       /*auto &menuManager = MenuManager::Get(mProject);
       menuManager.mLastAnalyzerRegistration = MenuCreator::repeattypenone;
