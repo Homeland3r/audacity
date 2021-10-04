@@ -47,7 +47,6 @@ private:
    std::vector<NormalizedKeyString> mStandardDefaultKeys; // The reduced set.
    std::vector<NormalizedKeyString> mKeys;
    AudacityProject &mProject;
-   AudacityProject *jProject{};
    const CommandContext &mcontext;
    CommandManager *mManager;
    void FilterKeys(std::vector<NormalizedKeyString> &arr);
@@ -114,7 +113,7 @@ void ResetConfigDialog::OnClose(wxCommandEvent &WXUNUSED(event))
 void ResetConfigDialog::MakeResetConfigDialog()
 {
    ShuttleGui S(this, eIsCreating);
-   S.StartStatic(XO("\nThis can reset everything to default such as the \nsettings, effects and the preferences you have set.\n\n") + XO("Select the configurations you want to reset\n\n"));
+   S.StartStatic(XO("\nWARNING : This can reset everything to default such as the \nsettings, effects and the preferences you have set.\n\n") + XO("Select the configurations you want to reset\n\n"));
    {
       S.StartVerticalLay(true);
       {
@@ -126,7 +125,6 @@ void ResetConfigDialog::MakeResetConfigDialog()
          mKeyboardCheckbox = S.Id(IdKeyboardCheckBox).AddCheckBox(XXO("Keyboard Preferences"), false);
          mMouseCheckbox = S.Id(IdMouseCheckBox).AddCheckBox(XXO("Recording/Playback Preferences"), false);
          mAllConfigurationsCheckbox = S.Id(IdAllConfigurationCheckbox).AddCheckBox(XXO("All Configurations"), false);
-         sada = S.Id(sadaid).
          S.SetBorder(45);
          S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, false);
          {
