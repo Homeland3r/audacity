@@ -14,7 +14,7 @@
 
 */
 /*******************************************************************/
-
+#include "prefs/ThemePrefs.h"
 #include <wx/checkbox.h>
 #include "ProjectSettings.h"
 #include "AudacityFileConfig.h"
@@ -229,8 +229,22 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
    }
    if(mInterfaceCheckBox->GetValue())
    {
-      gPrefs->DeleteGroup(wxT("/GUI"));
+      // lang was not usable and is not system language.  We got overridden.
+      gPrefs->Write(wxT("/Locale/Language"), "en");
+      gPrefs->Write(wxT("/GUI/Help"), "Local");
+      gPrefs->Write(wxT("/GUI/Theme"), "light");
+      gPrefs->Write(wxT("/GUI/EnvdBRange"), "60");
+      gPrefs->Write(wxT("/GUI/ShowSplashScreen"), "0");
+      gPrefs->Write(wxT("/GUI/ShowExtraMenus"), "0");
+      gPrefs->Write(wxT("/GUI/BeepOnCompletion"), "0");
+      gPrefs->Write(wxT("/GUI/RetainLabels"), "0");
+      gPrefs->Write(wxT("/GUI/BlendThemes"), "1");
+      gPrefs->Write(wxT("/GUI/RtlWorkaround"), "1");
+      gPrefs->Write(wxT("/QuickPlay/ToolTips"), "1");
+      gPrefs->Write(wxT("/QuickPlay/ScrubbingEnabled"), "1");
       gPrefs->Flush();
+      ThemePrefs::ApplyUpdatedImages();
+      DoReloadPreferences(mProject);
    }
    EndModal(0);
 }
