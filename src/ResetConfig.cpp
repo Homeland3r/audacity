@@ -166,7 +166,7 @@ void ResetConfigDialog::MakeResetConfigDialog()
 
 void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
 {
-   if (mDirectoriesCheckbox->GetValue())
+   if (mKeyboardCheckbox->GetValue())
    {
       auto &menuManager = MenuManager::Get(mProject);
       menuManager.mLastAnalyzerRegistration = MenuCreator::repeattypenone;
