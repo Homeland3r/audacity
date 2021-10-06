@@ -15,6 +15,42 @@
 */
 /*******************************************************************/
 
+#include "Screenshot.h"
+#include "commands/ScreenshotCommand.h"
+#include "commands/CommandTargets.h"
+#include "commands/CommandContext.h"
+#include <wx/app.h>
+#include <wx/defs.h>
+#include <wx/event.h>
+#include <wx/frame.h>
+
+#include "ShuttleGui.h"
+#include <wx/button.h>
+#include <wx/checkbox.h>
+#include <wx/dirdlg.h>
+#include <wx/image.h>
+#include <wx/intl.h>
+#include <wx/panel.h>
+#include <wx/sizer.h>
+#include <wx/statusbr.h>
+#include <wx/textctrl.h>
+#include <wx/timer.h>
+#include <wx/tglbtn.h>
+#include <wx/window.h>
+
+#include "prefs/GUISettings.h" // for RTL_WORKAROUND
+#include "Project.h"
+#include "ProjectStatus.h"
+#include "ProjectWindow.h"
+#include "ProjectWindows.h"
+#include "Prefs.h"
+#include "tracks/ui/TrackView.h"
+#include "widgets/HelpSystem.h"
+
+#include "ViewInfo.h"
+#include "WaveTrack.h"
+
+////////////////////////////////////////////unnecessary////////////////////////////////
 #include "ProjectSettings.h"
 #include "AudacityFileConfig.h"
 #include "ProjectSelectionManager.h"
