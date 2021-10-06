@@ -166,7 +166,7 @@ void ResetConfigDialog::MakeResetConfigDialog()
 
 void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
 {
-   if (mDirectoriesCheckbox && mDirectoriesCheckbox->GetValue())
+   if (mDirectoriesCheckbox->GetValue())
    {
       auto &menuManager = MenuManager::Get(mProject);
       menuManager.mLastAnalyzerRegistration = MenuCreator::repeattypenone;
@@ -226,7 +226,7 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
       ProjectSelectionManager::Get(mProject)
           .AS_SetRate(gPrefs->ReadDouble("/DefaultProjectSampleRate", 44100.0));
    }
-   if(mInterfaceCheckBox && mInterfaceCheckBox->GetValue())
+   if(mInterfaceCheckBox->GetValue())
    {
       gPrefs->DeleteGroup(wxT("/GUI"));
       gPrefs->Flush();
