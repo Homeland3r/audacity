@@ -14,15 +14,17 @@
 
 */
 /*******************************************************************/
-#include "prefs/ThemePrefs.h"
+
 #include <wx/checkbox.h>
-#include "ProjectSettings.h"
+#include <wx/radiobut.h>
 #include "AudacityFileConfig.h"
 #include "ProjectSelectionManager.h"
-#include "toolbars/ToolManager.h"
-#include "prefs/PrefsDialog.h"
+#include "ProjectSettings.h"
 #include "ShuttleGui.h"
 #include "TempDirectory.h"
+#include "prefs/PrefsDialog.h"
+#include "prefs/ThemePrefs.h"
+#include "toolbars/ToolManager.h"
 #include "widgets/KeyView.h"
 
 class ResetConfigDialog final : public wxDialogWrapper
@@ -40,7 +42,7 @@ private:
    void OnToggleKeyboardSet(wxCommandEvent & event);
    void OnToggleAllConfiguration(wxCommandEvent & event);
 
-   bool Commit();
+   void ApplyChanges();
    void FilterKeys(std::vector<NormalizedKeyString> &arr);
    void RefreshBindings(bool bSort);
    
@@ -88,8 +90,8 @@ enum
    IdKeyboardCheckBox,
    IdMouseCheckBox,
    IdAllConfigurationCheckbox,
-   IdCaptureToolbars,
-   IdCaptureEffects,
+   IdStandardCheckBox,
+   IdFullCheckBox,
 };
 
 BEGIN_EVENT_TABLE(ResetConfigDialog, wxDialogWrapper)
@@ -115,7 +117,6 @@ ResetConfigDialog::ResetConfigDialog(
    mStandardCheckBox = NULL;
    mFullCheckBox = NULL;
 mAllConfigurationsCheckbox = NULL;
-//mAllConfigurationsCheckbox->SetValue(true);
    SetName();
    MakeResetConfigDialog();
 }
@@ -147,10 +148,10 @@ void ResetConfigDialog::MakeResetConfigDialog()
          mKeyboardCheckBox = S.Id(IdKeyboardCheckBox).AddCheckBox(XXO("Keyboard Preferences"), false);
          S.StartHorizontalLay();
          {
-               mStandardCheckBox = S.Id(IdCaptureEffects)
+               mStandardCheckBox = S.Id(IdStandardCheckBox)
                   .Disable(!mKeyboardCheckBox->GetValue())
                   .AddRadioButtonToGroup(XXO("Standard"));
-               mFullCheckBox = S.Id(IdCaptureToolbars)
+               mFullCheckBox = S.Id(IdFullCheckBox)
                   .Disable(!mKeyboardCheckBox->GetValue())
                   .AddRadioButtonToGroup(XXO("Full"));
          }
@@ -206,7 +207,7 @@ void ResetConfigDialog::OnToggleAllConfiguration(wxCommandEvent & /* Evt */)
 
 void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
 {
-   if (mKeyboardCheckBox->GetValue())
+   if (mAllConfigurationsCheckbox->GetValue())
    {
       auto &menuManager = MenuManager::Get(mProject);
       menuManager.mLastAnalyzerRegistration = MenuCreator::repeattypenone;
@@ -221,34 +222,22 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
       // Directory will be reset on next restart.
 
       FileNames::UpdateDefaultPath(FileNames::Operation::Temp, TempDirectory::DefaultTempDir());
+
+      // There are many more things we could reset here.
+      // Beeds discussion as to which make sense to.
+      // Maybe in future versions?
+      // - Reset Effects
+      // - Reset Recording and Playback volumes
+      // - Reset Selection formats (and for spectral too)
+      // - Reset Play-at-speed speed to x1
+      // - Stop playback/recording and unapply pause.
+      // - Set Zoom sensibly.
       gPrefs->Write("/GUI/SyncLockTracks", 0);
       gPrefs->Write("/AudioIO/SoundActivatedRecord", 0);
       gPrefs->Write("/SelectionToolbarMode", 0);
       gPrefs->Flush();
-
       DoReloadPreferences(mProject);
       ToolManager::OnResetToolBars(mcontext);
-
-      // Reset Keyboard Preferences to Standard/Full.
-      mManager = &CommandManager::Get(mProject);
-
-      RefreshBindings(false);
-      gPrefs->DeleteEntry(wxT("/GUI/Shortcuts/FullDefaults"));
-      gPrefs->Flush();
-
-      mNewKeys = mDefaultKeys;
-
-      if (1 == 1)
-         FilterKeys(mNewKeys);
-      for (size_t i = 0; i < mNewKeys.size(); i++)
-      {
-         mManager->SetKeyFromIndex(i, mNewKeys[i]);
-      }
-      RefreshBindings(true);
-      bool verna = Commit();
-
-      // Clear pluginregistry.
-      wxRemoveFile(FileNames::PluginRegistry());
    
       // These are necessary to preserve the newly correctly laid out toolbars.
       // In particular the Device Toolbar ends up short on next restart,
@@ -266,14 +255,28 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
       ProjectSelectionManager::Get(mProject)
           .AS_SetRate(gPrefs->ReadDouble("/DefaultProjectSampleRate", 44100.0));
    }
+
+   if(mDirectoriesCheckbox->GetValue())
+
+   {
+      gPrefs->Write(wxT("/Directories/Open/Default"), "");
+      gPrefs->Write(wxT("/Directories/Save/Default"), "");
+      gPrefs->Write(wxT("/Directories/Import/Default"), "");
+      gPrefs->Write(wxT("/Directories/Export/Default"), "");
+      gPrefs->Write(wxT("/Directories/MacrosOut/Default"), "");
+      gPrefs->Flush();
+
+      FileNames::UpdateDefaultPath(FileNames::Operation::Temp, TempDirectory::DefaultTempDir());
+   }
+   
    if(mInterfaceCheckBox->GetValue())
    {
-      // lang was not usable and is not system language.  We got overridden.
+      // Resetting the GUI Preferences
       gPrefs->Write(wxT("/Locale/Language"), "en");
       gPrefs->Write(wxT("/GUI/Help"), "Local");
       gPrefs->Write(wxT("/GUI/Theme"), "light");
       gPrefs->Write(wxT("/GUI/EnvdBRange"), "60");
-      gPrefs->Write(wxT("/GUI/ShowSplashScreen"), "0");
+      gPrefs->Write(wxT("/GUI/ShowSplashScreen"), "1");
       gPrefs->Write(wxT("/GUI/ShowExtraMenus"), "0");
       gPrefs->Write(wxT("/GUI/BeepOnCompletion"), "0");
       gPrefs->Write(wxT("/GUI/RetainLabels"), "0");
@@ -288,7 +291,7 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
 
    if(mRecPlayCheckBox->GetValue())
    {
-      //Resetting the Playback Preferences
+      // Resetting the Playback Preferences
       gPrefs->Write(wxT("/AudioIO/EffectsPreviewLen"), "6");
       gPrefs->Write(wxT("/AudioIO/CutPreviewBeforeLen"), "2");
       gPrefs->Write(wxT("/AudioIO/CutPreviewAfterLen"), "1");
@@ -298,7 +301,7 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
       gPrefs->Write(wxT("/AudioIO/Microfades"), "0");
       gPrefs->Write(wxT("/AudioIO/UnpinnedScrubbing"), "1");
 
-      //Resetting the Recording preferences
+      // Resetting the Recording preferences
       gPrefs->Write(wxT("/AudioIO/Duplex"), "1");
       gPrefs->Write(wxT("/AudioIO/SWPlaythrough"), "0");
       gPrefs->Write(wxT("/GUI/PreferNewTrackRecord"), "0");
@@ -312,6 +315,33 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
       gPrefs->Write(wxT("/AudioIO/PreRoll"), "5");
       gPrefs->Write(wxT("/AudioIO/Crossfade"), "10");
    }
+
+   if(mKeyboardCheckBox->GetValue())
+   {
+      // Reset Keyboard Preferences to Standard/Full.
+      bool defaultSet = false;
+      if(mStandardCheckBox->GetValue())
+      {
+         defaultSet = true;
+      }
+      mManager = &CommandManager::Get(mProject);
+
+      RefreshBindings(false);
+      gPrefs->DeleteEntry(wxT("/GUI/Shortcuts/FullDefaults"));
+      gPrefs->Flush();
+
+      mNewKeys = mDefaultKeys;
+
+      if (defaultSet)
+         FilterKeys(mNewKeys);
+      for (size_t i = 0; i < mNewKeys.size(); i++)
+      {
+         mManager->SetKeyFromIndex(i, mNewKeys[i]);
+      }
+      RefreshBindings(true);
+      ApplyChanges();
+   }
+
    EndModal(0);
 }
 void ResetConfigDialog::FilterKeys(std::vector<NormalizedKeyString> &arr)
@@ -326,14 +356,8 @@ void ResetConfigDialog::FilterKeys(std::vector<NormalizedKeyString> &arr)
    }
 }
 
-bool ResetConfigDialog::Commit()
+void ResetConfigDialog::ApplyChanges()
 {
-   // On the Mac, preferences may be changed without any active
-   // projects.  This means that the CommandManager isn't available
-   // either.  So we can't attempt to save preferences, otherwise
-   // NULL ptr dereferences will happen in ShuttleGui because the
-   // radio buttons are never created.  (See Populate() above.)
-
    bool bFull = gPrefs->ReadBool(wxT("/GUI/Shortcuts/FullDefaults"), false);
    for (size_t i = 0; i < mNames.size(); i++)
    {
@@ -362,7 +386,7 @@ bool ResetConfigDialog::Commit()
       }
    }
 
-   return gPrefs->Flush();
+   gPrefs->Flush();
 }
 
 void ResetConfigDialog::RefreshBindings(bool bSort)
@@ -389,13 +413,3 @@ void ResetConfigDialog::RefreshBindings(bool bSort)
 
    mNewKeys = mKeys;
 }
-
-// There are many more things we could reset here.
-// Beeds discussion as to which make sense to.
-// Maybe in future versions?
-// - Reset Effects
-// - Reset Recording and Playback volumes
-// - Reset Selection formats (and for spectral too)
-// - Reset Play-at-speed speed to x1
-// - Stop playback/recording and unapply pause.
-// - Set Zoom sensibly.
