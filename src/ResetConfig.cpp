@@ -37,6 +37,8 @@ private:
    // WDR: handler declarations
    void OnProceed(wxCommandEvent &event);
    void OnClose(wxCommandEvent &event);
+   void OnToggleKeyboardSet(wxCommandEvent & event);
+   void OnToggleAllConfiguration(wxCommandEvent & event);
 
    bool Commit();
    void FilterKeys(std::vector<NormalizedKeyString> &arr);
@@ -55,9 +57,11 @@ private:
 
    wxCheckBox *mDirectoriesCheckbox;
    wxCheckBox *mInterfaceCheckBox;
-   wxCheckBox *mKeyboardCheckbox;
-   wxCheckBox *mMouseCheckbox;
+   wxCheckBox *mKeyboardCheckBox;
+   wxCheckBox *mRecPlayCheckBox;
    wxCheckBox *mAllConfigurationsCheckbox;
+   wxRadioButton *mFullCheckBox;
+   wxRadioButton *mStandardCheckBox;
    
 private:
    DECLARE_EVENT_TABLE()
@@ -84,11 +88,15 @@ enum
    IdKeyboardCheckBox,
    IdMouseCheckBox,
    IdAllConfigurationCheckbox,
+   IdCaptureToolbars,
+   IdCaptureEffects,
 };
 
 BEGIN_EVENT_TABLE(ResetConfigDialog, wxDialogWrapper)
 EVT_BUTTON(ProceedID, ResetConfigDialog::OnProceed)
 EVT_BUTTON(wxID_CANCEL, ResetConfigDialog::OnClose)
+EVT_CHECKBOX(IdKeyboardCheckBox, ResetConfigDialog::OnToggleKeyboardSet)
+EVT_CHECKBOX(IdAllConfigurationCheckbox, ResetConfigDialog::OnToggleAllConfiguration)
 END_EVENT_TABLE()
 
 ResetConfigDialog::ResetConfigDialog(
@@ -102,9 +110,12 @@ ResetConfigDialog::ResetConfigDialog(
 {
    mDirectoriesCheckbox = NULL;
    mInterfaceCheckBox = NULL;
-   mKeyboardCheckbox = NULL;
-   mMouseCheckbox = NULL;
-   mAllConfigurationsCheckbox = NULL;
+   mKeyboardCheckBox = NULL;
+   mRecPlayCheckBox = NULL;
+   mStandardCheckBox = NULL;
+   mFullCheckBox = NULL;
+mAllConfigurationsCheckbox = NULL;
+//mAllConfigurationsCheckbox->SetValue(true);
    SetName();
    MakeResetConfigDialog();
 }
@@ -126,11 +137,24 @@ void ResetConfigDialog::MakeResetConfigDialog()
          S.SetBorder(8);
 
          //
-         mDirectoriesCheckbox = S.Id(IdDirectoriesCheckbox).AddCheckBox(XXO("Directories Preferences"), false);
-         mInterfaceCheckBox = S.Id(IdInterfaceCheckBox).AddCheckBox(XXO("Interface"), false);
-         mKeyboardCheckbox = S.Id(IdKeyboardCheckBox).AddCheckBox(XXO("Keyboard Preferences"), false);
-         mMouseCheckbox = S.Id(IdMouseCheckBox).AddCheckBox(XXO("Plugins"), false);
-         mAllConfigurationsCheckbox = S.Id(IdAllConfigurationCheckbox).AddCheckBox(XXO("All Configurations"), false);
+         mAllConfigurationsCheckbox = S.Id(IdAllConfigurationCheckbox).AddCheckBox(XXO("All Configurations\n(Does not reset Keyboard Preferences)"), true);
+         mDirectoriesCheckbox = S.Id(IdDirectoriesCheckbox).Disable(mAllConfigurationsCheckbox->GetValue())
+                                 .AddCheckBox(XXO("Directories Preferences"), false);
+         mInterfaceCheckBox = S.Id(IdInterfaceCheckBox).Disable(mAllConfigurationsCheckbox->GetValue())
+                                 .AddCheckBox(XXO("Interface Preferences"), false);
+         mRecPlayCheckBox = S.Id(IdMouseCheckBox).Disable(mAllConfigurationsCheckbox->GetValue())
+                                 .AddCheckBox(XXO("Playback and Recording Preferences"), false);
+         mKeyboardCheckBox = S.Id(IdKeyboardCheckBox).AddCheckBox(XXO("Keyboard Preferences"), false);
+         S.StartHorizontalLay();
+         {
+               mStandardCheckBox = S.Id(IdCaptureEffects)
+                  .Disable(!mKeyboardCheckBox->GetValue())
+                  .AddRadioButtonToGroup(XXO("Standard"));
+               mFullCheckBox = S.Id(IdCaptureToolbars)
+                  .Disable(!mKeyboardCheckBox->GetValue())
+                  .AddRadioButtonToGroup(XXO("Full"));
+         }
+         S.EndHorizontalLay();
          S.SetBorder(40);
          S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, false);
          {
@@ -165,9 +189,24 @@ void ResetConfigDialog::MakeResetConfigDialog()
    S.EndStatic();
 }
 
+void ResetConfigDialog::OnToggleKeyboardSet(wxCommandEvent & /* Evt */)
+{
+   bool mKeyboardCheckBoxVal = (mKeyboardCheckBox->GetValue());
+   mStandardCheckBox->Enable(mKeyboardCheckBoxVal);
+   mFullCheckBox->Enable(mKeyboardCheckBoxVal);
+}
+
+void ResetConfigDialog::OnToggleAllConfiguration(wxCommandEvent & /* Evt */)
+{
+   bool mAllConfigurationsCheckBoxVal = !(mAllConfigurationsCheckbox->GetValue());
+   mDirectoriesCheckbox->Enable(mAllConfigurationsCheckBoxVal);
+   mInterfaceCheckBox->Enable(mAllConfigurationsCheckBoxVal);
+   mRecPlayCheckBox->Enable(mAllConfigurationsCheckBoxVal);
+}
+
 void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
 {
-   if (mKeyboardCheckbox->GetValue())
+   if (mKeyboardCheckBox->GetValue())
    {
       auto &menuManager = MenuManager::Get(mProject);
       menuManager.mLastAnalyzerRegistration = MenuCreator::repeattypenone;
@@ -245,6 +284,33 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
       gPrefs->Flush();
       ThemePrefs::ApplyUpdatedImages();
       DoReloadPreferences(mProject);
+   }
+
+   if(mRecPlayCheckBox->GetValue())
+   {
+      //Resetting the Playback Preferences
+      gPrefs->Write(wxT("/AudioIO/EffectsPreviewLen"), "6");
+      gPrefs->Write(wxT("/AudioIO/CutPreviewBeforeLen"), "2");
+      gPrefs->Write(wxT("/AudioIO/CutPreviewAfterLen"), "1");
+      gPrefs->Write(wxT("/AudioIO/SeekShortPeriod"), "1");
+      gPrefs->Write(wxT("/AudioIO/SeekLongPeriod"), "15");
+      gPrefs->Write(wxT("/AudioIO/VariSpeedPlay"), "1");
+      gPrefs->Write(wxT("/AudioIO/Microfades"), "0");
+      gPrefs->Write(wxT("/AudioIO/UnpinnedScrubbing"), "1");
+
+      //Resetting the Recording preferences
+      gPrefs->Write(wxT("/AudioIO/Duplex"), "1");
+      gPrefs->Write(wxT("/AudioIO/SWPlaythrough"), "0");
+      gPrefs->Write(wxT("/GUI/PreferNewTrackRecord"), "0");
+      gPrefs->Write(wxT("/Warnings/DropoutDetected"), "1");
+      gPrefs->Write(wxT("/AudioIO/SoundActivatedRecord"), "0");
+      gPrefs->Write(wxT("/AudioIO/SilenceLevel"), "-50");
+      gPrefs->Write(wxT("GUI/TrackNames/RecordingNameCustom"), "0");
+      gPrefs->Write(wxT("GUI/TrackNames/TrackNumber"), "0");
+      gPrefs->Write(wxT("GUI/TrackNames/DateStamp"), "0");
+      gPrefs->Write(wxT("GUI/TrackNames/TimeStamp"), "0");
+      gPrefs->Write(wxT("/AudioIO/PreRoll"), "5");
+      gPrefs->Write(wxT("/AudioIO/Crossfade"), "10");
    }
    EndModal(0);
 }
