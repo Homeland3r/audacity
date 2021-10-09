@@ -259,11 +259,7 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
    if(mDirectoriesCheckbox->GetValue())
 
    {
-      gPrefs->Write(wxT("/Directories/Open/Default"), "");
-      gPrefs->Write(wxT("/Directories/Save/Default"), "");
-      gPrefs->Write(wxT("/Directories/Import/Default"), "");
-      gPrefs->Write(wxT("/Directories/Export/Default"), "");
-      gPrefs->Write(wxT("/Directories/MacrosOut/Default"), "");
+      gPrefs->DeleteGroup(wxT("/Directories"));
       gPrefs->Flush();
 
       FileNames::UpdateDefaultPath(FileNames::Operation::Temp, TempDirectory::DefaultTempDir());
@@ -283,7 +279,7 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
       gPrefs->Write(wxT("/GUI/BlendThemes"), "1");
       gPrefs->Write(wxT("/GUI/RtlWorkaround"), "1");
       gPrefs->Write(wxT("/QuickPlay/ToolTips"), "1");
-      gPrefs->Write(wxT("/QuickPlay/ScrubbingEnabled"), "1");
+      gPrefs->Write(wxT("/QuickPlay/ScrubbingEnabled"), "0");
       gPrefs->Flush();
       ThemePrefs::ApplyUpdatedImages();
       DoReloadPreferences(mProject);
@@ -291,29 +287,15 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
 
    if(mRecPlayCheckBox->GetValue())
    {
-      // Resetting the Playback Preferences
-      gPrefs->Write(wxT("/AudioIO/EffectsPreviewLen"), "6");
-      gPrefs->Write(wxT("/AudioIO/CutPreviewBeforeLen"), "2");
-      gPrefs->Write(wxT("/AudioIO/CutPreviewAfterLen"), "1");
-      gPrefs->Write(wxT("/AudioIO/SeekShortPeriod"), "1");
-      gPrefs->Write(wxT("/AudioIO/SeekLongPeriod"), "15");
-      gPrefs->Write(wxT("/AudioIO/VariSpeedPlay"), "1");
-      gPrefs->Write(wxT("/AudioIO/Microfades"), "0");
-      gPrefs->Write(wxT("/AudioIO/UnpinnedScrubbing"), "1");
-
-      // Resetting the Recording preferences
-      gPrefs->Write(wxT("/AudioIO/Duplex"), "1");
-      gPrefs->Write(wxT("/AudioIO/SWPlaythrough"), "0");
+      // Resetting the Playback and Recording preferences
       gPrefs->Write(wxT("/GUI/PreferNewTrackRecord"), "0");
       gPrefs->Write(wxT("/Warnings/DropoutDetected"), "1");
-      gPrefs->Write(wxT("/AudioIO/SoundActivatedRecord"), "0");
-      gPrefs->Write(wxT("/AudioIO/SilenceLevel"), "-50");
       gPrefs->Write(wxT("GUI/TrackNames/RecordingNameCustom"), "0");
       gPrefs->Write(wxT("GUI/TrackNames/TrackNumber"), "0");
       gPrefs->Write(wxT("GUI/TrackNames/DateStamp"), "0");
       gPrefs->Write(wxT("GUI/TrackNames/TimeStamp"), "0");
-      gPrefs->Write(wxT("/AudioIO/PreRoll"), "5");
-      gPrefs->Write(wxT("/AudioIO/Crossfade"), "10");
+      gPrefs->DeleteGroup(wxT("/AudioIO"));
+      gPrefs->Flush();
    }
 
    if(mKeyboardCheckBox->GetValue())
