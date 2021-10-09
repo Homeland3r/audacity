@@ -229,7 +229,6 @@ void ResetConfigDialog::OnOK(wxCommandEvent &WXUNUSED(event))
    }
 
    if(mDirectoriesCheckbox->GetValue())
-
    {
       gPrefs->DeleteGroup(wxT("/Directories"));
       gPrefs->Flush();
