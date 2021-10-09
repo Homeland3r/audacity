@@ -37,12 +37,12 @@ public:
 
 private:
    // WDR: handler declarations
-   void OnProceed(wxCommandEvent &event);
-   void OnClose(wxCommandEvent &event);
+   void OnOK(wxCommandEvent &event);
+   void OnCancel(wxCommandEvent &event);
    void OnToggleKeyboardSet(wxCommandEvent & event);
    void OnToggleAllConfiguration(wxCommandEvent & event);
 
-   void ApplyChanges();
+   void ApplyKeyboardChanges();
    void FilterKeys(std::vector<NormalizedKeyString> &arr);
    void RefreshBindings(bool bSort);
    
@@ -53,15 +53,15 @@ private:
    CommandManager *mManager;
 
    std::vector<NormalizedKeyString> mDefaultKeys; // The full set.
+   std::vector<NormalizedKeyString> mKeys;
    std::vector<NormalizedKeyString> mNewKeys;     // Used for work in progress.
    std::vector<NormalizedKeyString> mStandardDefaultKeys; // The reduced set.
-   std::vector<NormalizedKeyString> mKeys;
 
+   wxCheckBox *mAllConfigurationsCheckbox;
    wxCheckBox *mDirectoriesCheckbox;
    wxCheckBox *mInterfaceCheckBox;
    wxCheckBox *mKeyboardCheckBox;
    wxCheckBox *mRecPlayCheckBox;
-   wxCheckBox *mAllConfigurationsCheckbox;
    wxRadioButton *mFullCheckBox;
    wxRadioButton *mStandardCheckBox;
    
@@ -84,8 +84,7 @@ void RunResetConfig(wxWindow *parent, AudacityProject &project, const CommandCon
 
 enum
 {
-   ProceedID = 1000,
-   IdDirectoriesCheckbox,
+   IdDirectoriesCheckbox = 1000,
    IdInterfaceCheckBox,
    IdKeyboardCheckBox,
    IdMouseCheckBox,
@@ -95,8 +94,8 @@ enum
 };
 
 BEGIN_EVENT_TABLE(ResetConfigDialog, wxDialogWrapper)
-EVT_BUTTON(ProceedID, ResetConfigDialog::OnProceed)
-EVT_BUTTON(wxID_CANCEL, ResetConfigDialog::OnClose)
+EVT_BUTTON(wxID_OK, ResetConfigDialog::OnOK)
+EVT_BUTTON(wxID_CANCEL, ResetConfigDialog::OnCancel)
 EVT_CHECKBOX(IdKeyboardCheckBox, ResetConfigDialog::OnToggleKeyboardSet)
 EVT_CHECKBOX(IdAllConfigurationCheckbox, ResetConfigDialog::OnToggleAllConfiguration)
 END_EVENT_TABLE()
@@ -110,20 +109,20 @@ ResetConfigDialog::ResetConfigDialog(
                           wxRESIZE_BORDER),
       mProject(project), mcontext(context)
 {
+   mAllConfigurationsCheckbox = NULL;
    mDirectoriesCheckbox = NULL;
    mInterfaceCheckBox = NULL;
    mKeyboardCheckBox = NULL;
    mRecPlayCheckBox = NULL;
    mStandardCheckBox = NULL;
    mFullCheckBox = NULL;
-mAllConfigurationsCheckbox = NULL;
    SetName();
    MakeResetConfigDialog();
 }
 
 // WDR: handler implementations for ResetConfigDialog
 
-void ResetConfigDialog::OnClose(wxCommandEvent &WXUNUSED(event))
+void ResetConfigDialog::OnCancel(wxCommandEvent &WXUNUSED(event))
 {
    EndModal(0);
 }
@@ -131,81 +130,49 @@ void ResetConfigDialog::OnClose(wxCommandEvent &WXUNUSED(event))
 void ResetConfigDialog::MakeResetConfigDialog()
 {
    ShuttleGui S(this, eIsCreatingFromPrefs);
-   S.StartStatic(XO("\nWARNING : This can reset everything to default\nsuch as the settings, effects and the preferences\nyou have set.\n\n") + XO("Select the configurations you want to reset\n\n"));
-   {
+   S.StartStatic(XO("\nWARNING : This can reset everything to default such as\n"
+         "the settings, effects and the preferences you have set.\n\n")
+         //"you have set.\n\n") 
+      + XO("Select the configurations you want to reset\n\n"));   {
       S.StartVerticalLay(true);
       {
          S.SetBorder(8);
-
          //
-         mAllConfigurationsCheckbox = S.Id(IdAllConfigurationCheckbox).AddCheckBox(XXO("All Configurations\n(Does not reset Keyboard Preferences)"), true);
-         mDirectoriesCheckbox = S.Id(IdDirectoriesCheckbox).Disable(mAllConfigurationsCheckbox->GetValue())
+         mAllConfigurationsCheckbox = S.Id(IdAllConfigurationCheckbox)
+                                 .AddCheckBox(XXO("All Configurations\n(Does not reset Keyboard Preferences)"), true);
+         mDirectoriesCheckbox = S.Id(IdDirectoriesCheckbox)
+                                 .Disable(mAllConfigurationsCheckbox->GetValue())
                                  .AddCheckBox(XXO("Directories Preferences"), false);
-         mInterfaceCheckBox = S.Id(IdInterfaceCheckBox).Disable(mAllConfigurationsCheckbox->GetValue())
+         mInterfaceCheckBox = S.Id(IdInterfaceCheckBox)
+                                 .Disable(mAllConfigurationsCheckbox->GetValue())
                                  .AddCheckBox(XXO("Interface Preferences"), false);
-         mRecPlayCheckBox = S.Id(IdMouseCheckBox).Disable(mAllConfigurationsCheckbox->GetValue())
+         mRecPlayCheckBox = S.Id(IdMouseCheckBox)
+                                 .Disable(mAllConfigurationsCheckbox->GetValue())
                                  .AddCheckBox(XXO("Playback and Recording Preferences"), false);
          mKeyboardCheckBox = S.Id(IdKeyboardCheckBox).AddCheckBox(XXO("Keyboard Preferences"), false);
+
          S.StartHorizontalLay();
          {
-               mStandardCheckBox = S.Id(IdStandardCheckBox)
-                  .Disable(!mKeyboardCheckBox->GetValue())
-                  .AddRadioButtonToGroup(XXO("Standard"));
-               mFullCheckBox = S.Id(IdFullCheckBox)
-                  .Disable(!mKeyboardCheckBox->GetValue())
-                  .AddRadioButtonToGroup(XXO("Full"));
-         }
-         S.EndHorizontalLay();
-         S.SetBorder(40);
-         S.StartHorizontalLay(wxALIGN_LEFT | wxEXPAND, false);
-         {
-            S.StartHorizontalLay(wxALIGN_LEFT, false);
-            {
-               S.Id(wxID_CANCEL).AddButton(XXO("Cancel"));
-               /* i18n-hint verb; to start resetting */
-            }
-            S.EndHorizontalLay();
-
-            S.StartHorizontalLay(wxALIGN_CENTER, true);
-            {
-               // Spacer
-            }
-            S.EndHorizontalLay();
-
-            S.StartHorizontalLay(wxALIGN_NOT | wxALIGN_LEFT, false);
-            {
-               /* i18n-hint verb */
-               S.Id(ProceedID).AddButton(XXO("Proceed"));
-
-            }
-            S.EndHorizontalLay();
+            //S.SetBorder(8);
+            mStandardCheckBox = S.Id(IdStandardCheckBox)
+               .Disable(!mKeyboardCheckBox->GetValue())
+               .AddRadioButtonToGroup(XXO("Standard"));
+            mFullCheckBox = S.Id(IdFullCheckBox)
+               .Disable(!mKeyboardCheckBox->GetValue())
+               .AddRadioButtonToGroup(XXO("Full"));
+               SetSizeHints(GetSize());
          }
          S.EndHorizontalLay();
       }
       S.EndVerticalLay();
-
+      S.AddSpace(10);
+      S.AddStandardButtons(eOkButton | eCancelButton);
       Fit();
-      SetSizeHints(GetSize());
    }
    S.EndStatic();
 }
 
-void ResetConfigDialog::OnToggleKeyboardSet(wxCommandEvent & /* Evt */)
-{
-   bool mKeyboardCheckBoxVal = (mKeyboardCheckBox->GetValue());
-   mStandardCheckBox->Enable(mKeyboardCheckBoxVal);
-   mFullCheckBox->Enable(mKeyboardCheckBoxVal);
-}
-
-void ResetConfigDialog::OnToggleAllConfiguration(wxCommandEvent & /* Evt */)
-{
-   bool mAllConfigurationsCheckBoxVal = !(mAllConfigurationsCheckbox->GetValue());
-   mDirectoriesCheckbox->Enable(mAllConfigurationsCheckBoxVal);
-   mInterfaceCheckBox->Enable(mAllConfigurationsCheckBoxVal);
-   mRecPlayCheckBox->Enable(mAllConfigurationsCheckBoxVal);
-}
-
-void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
+void ResetConfigDialog::OnOK(wxCommandEvent &WXUNUSED(event))
 {
    if (mAllConfigurationsCheckbox->GetValue())
    {
@@ -321,11 +288,28 @@ void ResetConfigDialog::OnProceed(wxCommandEvent &WXUNUSED(event))
          mManager->SetKeyFromIndex(i, mNewKeys[i]);
       }
       RefreshBindings(true);
-      ApplyChanges();
+      ApplyKeyboardChanges();
    }
 
    EndModal(0);
 }
+
+
+void ResetConfigDialog::OnToggleKeyboardSet(wxCommandEvent & /* Evt */)
+{
+   bool mKeyboardCheckBoxVal = (mKeyboardCheckBox->GetValue());
+   mStandardCheckBox->Enable(mKeyboardCheckBoxVal);
+   mFullCheckBox->Enable(mKeyboardCheckBoxVal);
+}
+
+void ResetConfigDialog::OnToggleAllConfiguration(wxCommandEvent & /* Evt */)
+{
+   bool mAllConfigurationsCheckBoxVal = !(mAllConfigurationsCheckbox->GetValue());
+   mDirectoriesCheckbox->Enable(mAllConfigurationsCheckBoxVal);
+   mInterfaceCheckBox->Enable(mAllConfigurationsCheckBoxVal);
+   mRecPlayCheckBox->Enable(mAllConfigurationsCheckBoxVal);
+}
+
 void ResetConfigDialog::FilterKeys(std::vector<NormalizedKeyString> &arr)
 {
    const auto &MaxListOnly = CommandManager::ExcludedList();
@@ -338,7 +322,7 @@ void ResetConfigDialog::FilterKeys(std::vector<NormalizedKeyString> &arr)
    }
 }
 
-void ResetConfigDialog::ApplyChanges()
+void ResetConfigDialog::ApplyKeyboardChanges()
 {
    bool bFull = gPrefs->ReadBool(wxT("/GUI/Shortcuts/FullDefaults"), false);
    for (size_t i = 0; i < mNames.size(); i++)
