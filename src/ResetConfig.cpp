@@ -44,7 +44,7 @@ private:
 
    void ApplyKeyboardChanges();
    void FilterKeys(std::vector<NormalizedKeyString> &arr);
-   void RefreshBindings(bool bSort);
+   void GetBindings(bool bSort);
    
    AudacityProject &mProject;
    const CommandContext &mcontext;
@@ -87,7 +87,7 @@ enum
    IdDirectoriesCheckbox = 1000,
    IdInterfaceCheckBox,
    IdKeyboardCheckBox,
-   IdMouseCheckBox,
+   IdRecPlayCheckBox,
    IdAllConfigurationCheckbox,
    IdStandardCheckBox,
    IdFullCheckBox,
@@ -138,28 +138,33 @@ void ResetConfigDialog::MakeResetConfigDialog()
       {
          S.SetBorder(8);
          //
+         // Checkbox for resetting all configurations.
          mAllConfigurationsCheckbox = S.Id(IdAllConfigurationCheckbox)
                                  .AddCheckBox(XXO("All Configurations\n(Does not reset Keyboard Preferences)"), true);
+         // Checkbox for resetting the directory preferences.
          mDirectoriesCheckbox = S.Id(IdDirectoriesCheckbox)
                                  .Disable(mAllConfigurationsCheckbox->GetValue())
                                  .AddCheckBox(XXO("Directories Preferences"), false);
+         // Checkbox to reset the interface preferences.
          mInterfaceCheckBox = S.Id(IdInterfaceCheckBox)
                                  .Disable(mAllConfigurationsCheckbox->GetValue())
                                  .AddCheckBox(XXO("Interface Preferences"), false);
-         mRecPlayCheckBox = S.Id(IdMouseCheckBox)
+         // Checkbox for resetting the Playback and Recording preferences.
+         mRecPlayCheckBox = S.Id(IdRecPlayCheckBox)
                                  .Disable(mAllConfigurationsCheckbox->GetValue())
                                  .AddCheckBox(XXO("Playback and Recording Preferences"), false);
+         // Checkbox for resetting the keyboard preferences.
          mKeyboardCheckBox = S.Id(IdKeyboardCheckBox).AddCheckBox(XXO("Keyboard Preferences"), false);
 
          S.StartHorizontalLay();
          {
-            //S.SetBorder(8);
+            // Sub option checkboxes for Keyboard Preferences.
             mStandardCheckBox = S.Id(IdStandardCheckBox)
                .Disable(!mKeyboardCheckBox->GetValue())
-               .AddRadioButtonToGroup(XXO("Standard"));
+               .AddRadioButtonToGroup(XXO("Standard")); //Reset to default Standard Layout.
             mFullCheckBox = S.Id(IdFullCheckBox)
                .Disable(!mKeyboardCheckBox->GetValue())
-               .AddRadioButtonToGroup(XXO("Full"));
+               .AddRadioButtonToGroup(XXO("Full")); // Reset to default Full Layout.
                SetSizeHints(GetSize());
          }
          S.EndHorizontalLay();
@@ -275,7 +280,7 @@ void ResetConfigDialog::OnOK(wxCommandEvent &WXUNUSED(event))
       }
       mManager = &CommandManager::Get(mProject);
 
-      RefreshBindings(false);
+      GetBindings(false);
       gPrefs->DeleteEntry(wxT("/GUI/Shortcuts/FullDefaults"));
       gPrefs->Flush();
 
@@ -287,14 +292,14 @@ void ResetConfigDialog::OnOK(wxCommandEvent &WXUNUSED(event))
       {
          mManager->SetKeyFromIndex(i, mNewKeys[i]);
       }
-      RefreshBindings(true);
+      GetBindings(true);
       ApplyKeyboardChanges();
    }
 
    EndModal(0);
 }
 
-
+// Toggle Checkbox acceess of sub options according to the state of main Keyboard Layout checkbox.
 void ResetConfigDialog::OnToggleKeyboardSet(wxCommandEvent & /* Evt */)
 {
    bool mKeyboardCheckBoxVal = (mKeyboardCheckBox->GetValue());
@@ -302,6 +307,7 @@ void ResetConfigDialog::OnToggleKeyboardSet(wxCommandEvent & /* Evt */)
    mFullCheckBox->Enable(mKeyboardCheckBoxVal);
 }
 
+// Toggle Checkbox acceess of other options according to the state of All Configuration checkbox.
 void ResetConfigDialog::OnToggleAllConfiguration(wxCommandEvent & /* Evt */)
 {
    bool mAllConfigurationsCheckBoxVal = !(mAllConfigurationsCheckbox->GetValue());
@@ -310,6 +316,7 @@ void ResetConfigDialog::OnToggleAllConfiguration(wxCommandEvent & /* Evt */)
    mRecPlayCheckBox->Enable(mAllConfigurationsCheckBoxVal);
 }
 
+// Filter out to get the Standard Layout keys
 void ResetConfigDialog::FilterKeys(std::vector<NormalizedKeyString> &arr)
 {
    const auto &MaxListOnly = CommandManager::ExcludedList();
@@ -322,6 +329,7 @@ void ResetConfigDialog::FilterKeys(std::vector<NormalizedKeyString> &arr)
    }
 }
 
+// Apply the keyboard layout changes to the file.
 void ResetConfigDialog::ApplyKeyboardChanges()
 {
    bool bFull = gPrefs->ReadBool(wxT("/GUI/Shortcuts/FullDefaults"), false);
@@ -355,7 +363,7 @@ void ResetConfigDialog::ApplyKeyboardChanges()
    gPrefs->Flush();
 }
 
-void ResetConfigDialog::RefreshBindings(bool bSort)
+void ResetConfigDialog::GetBindings(bool bSort)
 {
    TranslatableStrings Labels;
    TranslatableStrings Categories;
@@ -372,7 +380,7 @@ void ResetConfigDialog::RefreshBindings(bool bSort)
        Labels,
        Categories,
        Prefixes,
-       true); // True to include effects (list items), false otherwise.
+       true);
 
    mStandardDefaultKeys = mDefaultKeys;
    FilterKeys(mStandardDefaultKeys);
