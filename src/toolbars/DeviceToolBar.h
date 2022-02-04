@@ -47,7 +47,7 @@ class DeviceToolBar final : public ToolBar {
    void OnCaptureKey(wxCommandEvent &event);
 
    void OnChoice(wxCommandEvent & event);
-   void OnToolbarEntry(wxMouseEvent &event);
+   void OnToolbarEntry(wxCommandEvent &event);
 
    /// When the prefs don't exist this value is used.
    /// 883 takes a complete row in the default initial size of Audacity.
@@ -77,6 +77,7 @@ class DeviceToolBar final : public ToolBar {
    wxChoice *mOutput;
    wxChoice *mInputChannels;
    wxChoice *mHost;
+   wxButton *rescan;
 
    Observer::Subscription mSubscription;
 

@@ -169,6 +169,14 @@ void DeviceToolBar::Populate()
 #endif
    Add(mOutput, 30, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 1);
 
+//device OnRescannedDevices
+   rescan = safenew wxButton(this,
+                          wxID_ANY,
+                          wxT("Rescan Audio Devices"));
+   Add(rescan, 20, wxALIGN_CENTER_VERTICAL | wxLEFT | wxRIGHT, 1);
+
+   rescan->Bind(wxEVT_BUTTON, &DeviceToolBar::OnToolbarEntry, this);
+
 #if defined(__WXGTK3__)
    // Nothing special
 #elif defined(__WXGTK__)
@@ -207,7 +215,7 @@ void DeviceToolBar::Populate()
    mInputChannels->Bind(wxEVT_KILL_FOCUS,
                  &DeviceToolBar::OnFocus,
                  this);
-   Bind(wxEVT_ENTER_WINDOW, &DeviceToolBar::OnToolbarEntry, this);
+  // Bind(wxEVT_ENTER_WINDOW, &DeviceToolBar::OnToolbarEntry, this);
 
    SetNames();
 
@@ -219,7 +227,7 @@ void DeviceToolBar::OnFocus(wxFocusEvent &event)
    KeyboardCapture::OnFocus( *this, event );
 }
 
-void DeviceToolBar::OnToolbarEntry(wxMouseEvent &event)
+void DeviceToolBar::OnToolbarEntry(wxCommandEvent &event)
 {
    DeviceManager::Instance()->Rescan();
 }
@@ -696,18 +704,22 @@ void DeviceToolBar::OnChoice(wxCommandEvent &event)
 
 void DeviceToolBar::ShowInputDialog()
 {
+   DeviceManager::Instance()->Rescan();
    ShowComboDialog(mInput, XO("Select Recording Device"));
 }
 void DeviceToolBar::ShowOutputDialog()
 {
+   DeviceManager::Instance()->Rescan();
    ShowComboDialog(mOutput, XO("Select Playback Device"));
 }
 void DeviceToolBar::ShowHostDialog()
 {
+   DeviceManager::Instance()->Rescan();
    ShowComboDialog(mHost, XO("Select Audio Host"));
 }
 void DeviceToolBar::ShowChannelsDialog()
 {
+   DeviceManager::Instance()->Rescan();
    ShowComboDialog(mInputChannels, XO("Select Recording Channels"));
 }
 
