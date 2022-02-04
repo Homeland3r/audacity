@@ -207,6 +207,7 @@ void DeviceToolBar::Populate()
    mInputChannels->Bind(wxEVT_KILL_FOCUS,
                  &DeviceToolBar::OnFocus,
                  this);
+   Bind(wxEVT_ENTER_WINDOW, &DeviceToolBar::OnToolbarEntry, this);
 
    SetNames();
 
@@ -216,6 +217,11 @@ void DeviceToolBar::Populate()
 void DeviceToolBar::OnFocus(wxFocusEvent &event)
 {
    KeyboardCapture::OnFocus( *this, event );
+}
+
+void DeviceToolBar::OnToolbarEntry(wxMouseEvent &event)
+{
+   DeviceManager::Instance()->Rescan();
 }
 
 void DeviceToolBar::OnCaptureKey(wxCommandEvent &event)

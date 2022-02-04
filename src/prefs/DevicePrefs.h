@@ -38,7 +38,8 @@ class DevicePrefs final : public PrefsPanel
    void GetNamesAndLabels();
 
    void OnHost(wxCommandEvent & e);
-   void OnDevice(wxCommandEvent & e);
+   void OnToolbarEntry(wxMouseEvent &event);
+   void OnDevice(wxCommandEvent &e);
 
    TranslatableStrings mHostNames;
    wxArrayStringEx mHostLabels;
